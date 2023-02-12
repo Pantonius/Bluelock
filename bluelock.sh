@@ -21,14 +21,12 @@ while true; do
     if [ -z $rssi ] && [ $locked != true ]; then
         echo Device not connected!
     else
-        echo RSSI is $rssi
+        printf "\r%b" "RSSI is $rssi"
         if [ $rssi -gt $bt_threshold ] && [ $locked != true ]; then
             locked=true
-            echo Locking screen... $locked
             $(xdg-screensaver lock)
         elif [ $rssi -lt $bt_threshold ] && [ $locked == true ]; then
             locked=false
-            echo Unlocking screen... $locked
             $(loginctl unlock-session)
         fi
     fi
