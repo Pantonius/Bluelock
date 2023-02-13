@@ -5,13 +5,17 @@ bt_threshold=$2 # <your threshold value>
 locked=false
 
 if [ -z $bt_addr ]; then
-    echo "Please provide bluetooth device address"
-    exit 1
+    echo "Scanning for devices..."
+    devices=$(stdbuf -oL hcitool scan | grep -v "Scanning" | nl)
+    echo $devices
+    echo "Which device do you want to use for bluelock?"
+    read answer
+    bt_addr=$(echo $devices | sed "${answer}q;d" | cut -d " " -f 2)
+    # TODO establis a connection to the device
 fi
 
 if [ -z $bt_threshold ]; then
-    echo "Please provide rssi threshold value"
-    exit 1
+    bt_threshold=5
 fi
 
 while true; do
