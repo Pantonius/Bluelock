@@ -7,11 +7,13 @@ locked=false
 if [ -z $bt_addr ]; then
     echo "Scanning for devices..."
     devices=$(stdbuf -oL hcitool scan | grep -v "Scanning" | nl)
-    echo $devices
+    echo "$devices"
     echo "Which device do you want to use for bluelock?"
     read answer
-    bt_addr=$(echo $devices | sed "${answer}q;d" | cut -d " " -f 2)
-    # TODO establis a connection to the device
+    bt_addr=$(echo "$devices" | grep -E "^[ ]*$answer" | sed -r 's/.*(([A-F0-9]{2}:){5}[A-F0-9]{2}).*/\1/g')
+
+    bluetoothctl trust $bt_addr
+    bluetoothctl connect $bt_addr
 fi
 
 if [ -z $bt_threshold ]; then
