@@ -4,13 +4,19 @@ bt_addr=$1 # <your bluetooth device address>
 bt_threshold=$2 # <your threshold value>
 locked=false
 
-bluetoothctl agent on
+coproc bluetoothctl
+echo -e 'agent on' >&${COPROC[1]}
 
 if [ -z $bt_addr ]; then
     answer=""
     while [ -z "$answer" ]; do
         echo "Scanning for devices..."
-        devices=$(stdbuf -oL hcitool scan | grep -v "Scanning" | nl)
+        
+        echo -e 'scan on' >&${COPROC[1]}
+        sleep 1.5
+        devices=$(echo "devices" | bluetoothctl | tail -n+3 | grep -E '([A-F0-9]{2}:){5}[A-F0-9]{2}' | cut -d" " -f2- | nl)
+        echo -e 'scan off' >&${COPROC[1]}
+        
         echo "$devices"
         echo "Which device do you want to use for bluelock? (press ENTER to retry)"
         read answer
