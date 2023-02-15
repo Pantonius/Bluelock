@@ -8,8 +8,30 @@ coproc bluetoothctl
 echo -e 'agent on' >&${COPROC[1]}
 
 if [ -z $bt_addr ]; then
-    answer=""
-    while [ -z "$answer" ]; do
+    # Check if any devices are connected
+    connected=$(bluetoothctl paired-devices | cut -d' ' -f2 |
+    while read -r uuid
+    do
+        info=`bluetoothctl info $uuid`
+        if echo "$info" | grep -q "Connected: yes"; then
+            name=$(echo "$info" | grep "Name" | cut -d' ' -f2)
+            echo "$uuid $name"
+        fi
+    done | nl
+    )
+
+    if [ -n "$connected" ]; then
+        echo "If you want to use one of the following connected devices, enter the number:"
+        echo "$connected"
+        echo "Otherwise, press ENTER to scan for devices."
+        read answer
+
+        if [ -n "$answer" ]; then
+            bt_addr=$(echo "$connected" | grep -E "^[ ]*$answer" | sed -r 's/.*(([A-F0-9]{2}:){5}[A-F0-9]{2}).*/\1/g')
+        fi
+    fi
+
+    while [ -z "$bt_addr" ]; do
         echo "Scanning for devices..."
         
         echo -e 'scan on' >&${COPROC[1]}
