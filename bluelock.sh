@@ -4,20 +4,32 @@ bt_addr=$1 # <your bluetooth device address>
 bt_threshold=$2 # <your threshold value>
 locked=false
 
-if [ -z $bt_addr ]; then
-    echo "Scanning for devices..."
-    devices=$(stdbuf -oL hcitool scan | grep -v "Scanning" | nl)
-    echo "$devices"
-    echo "Which device do you want to use for bluelock?"
-    read answer
-    bt_addr=$(echo "$devices" | grep -E "^[ ]*$answer" | sed -r 's/.*(([A-F0-9]{2}:){5}[A-F0-9]{2}).*/\1/g')
+bluetoothctl agent on
 
-    bluetoothctl trust $bt_addr
+if [ -z $bt_addr ]; then
+    answer=""
+    while [ -z "$answer" ]; do
+        echo "Scanning for devices..."
+        devices=$(stdbuf -oL hcitool scan | grep -v "Scanning" | nl)
+        echo "$devices"
+        echo "Which device do you want to use for bluelock? (press ENTER to retry)"
+        read answer
+
+        if [ -z "$answer" ]; then
+            continue
+        fi
+
+        bt_addr=$(echo "$devices" | grep -E "^[ ]*$answer" | sed -r 's/.*(([A-F0-9]{2}:){5}[A-F0-9]{2}).*/\1/g')
+    done
+
+    # TODO add pairing capability
+    bluetoothctl discoverable on
     bluetoothctl connect $bt_addr
+    bluetoothctl discoverable off
 fi
 
 if [ -z $bt_threshold ]; then
-    bt_threshold=5
+    bt_threshold=10
 fi
 
 while true; do
